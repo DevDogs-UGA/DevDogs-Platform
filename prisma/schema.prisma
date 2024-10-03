@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model github_issues {
+  id            String    @id
+  user_id       String?
+  status        String?
+  title         String?
+  complexity    Int?      @db.SmallInt
+  quality       Int?      @db.SmallInt
+  time_estimate Int?      @db.SmallInt
+  designation   String?
+  priority      Int?      @db.SmallInt
+  numberOfUsers Int?
+  closed        Boolean   @default(false)
+  closed_at     DateTime? @db.Timestamp(6)
+  closed_by     String?
+  issue_number  Int
+  points        points[]
+}
+
+model users {
+  id          Int      @id @default(autoincrement())
+  githubLogin String   @unique(map: "users_index_2")
+  full_name   String
+  points      points[]
+}
+
+model points {
+  id            Int            @id @default(autoincrement())
+  updated_at    DateTime       @default(now()) @db.Timestamp(6)
+  points        Float?
+  issue_id      String?
+  user_id       Int?
+  github_issues github_issues? @relation(fields: [issue_id], references: [id], onDelete: Cascade, map: "points_relation_1")
+  users         users?         @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "points_relation_3")
+}

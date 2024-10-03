@@ -1,0 +1,57 @@
+var express = require('express');
+var router = express.Router();
+var Prisma = require('@prisma/client');
+const client = new Prisma.PrismaClient();
+const { githubData } = require('../controllers')
+
+
+/* GET users listing. */
+router.get('/', async function(req, res, next) {
+    let githubResponse = [];
+
+    try {
+        const response = await githubData.getGithubData(1);
+        const resJson = await response.json();
+        const arr = resJson.data.organization.projectV2.items.edges;
+    
+        // Use map instead of forEach to create an array of promises
+        const promises = arr.map(async (element) => {
+            let temp = {};
+            element.node?.fieldValues.nodes.forEach((item) => {
+                let arrAdd = item.name || item.number;
+                if (arrAdd) {
+                    temp[item.field.name] = arrAdd;
+                }
+            });
+            temp['title'] = element.node.content.title;
+            temp['id'] = element.node.content.id;
+            temp['closed'] = element.node.content.closed;
+            temp['closed_at'] = element.node.content.closedAt;
+            temp['issue_num'] = element.node.content.number;
+            var assignees = element.node.fieldValues.nodes.find((item) => item.field?.name === 'Assignees');
+            var tempUser = "";
+            for (let i = 0; i < assignees?.users.nodes.length; i++) {
+                tempUser += assignees.users.nodes[i].login;
+                if (tempUser.length > 0 && i < assignees.users.nodes.length - 1) {
+                    tempUser += ", ";
+                }
+            }
+            temp['users'] = tempUser;
+            if (temp.id) {
+                await githubData.addGithubDataToDatabase(temp);
+            }
+        });
+    
+        // Wait for all promises to resolve
+        await Promise.all(promises);
+    
+        // Now that all operations are complete, send the response
+        // console.log(githubResponse);
+        res.status(200).send('Operation completed successfully');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+module.exports = router;
