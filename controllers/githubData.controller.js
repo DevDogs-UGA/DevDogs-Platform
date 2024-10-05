@@ -1,8 +1,9 @@
-var Prisma = require('@prisma/client');
-const client = new Prisma.PrismaClient();
-const { closedBy } = require('./closedBy.controller');
+import Prisma from '@prisma/client';
+import { closedBy } from './closedBy.controller.js';
 
-async function getGithubData(projectNum) {
+const client = new Prisma.PrismaClient();
+
+export async function getGithubData(projectNum) {
     const response = await fetch('https://api.github.com/graphql', {
         method: 'POST',
         headers: {
@@ -93,7 +94,7 @@ async function getGithubData(projectNum) {
 }
 
 // only for DevDogs-website
-async function addGithubDataToDatabase(temp) {
+export async function addGithubDataToDatabase(temp) {
     await addUsers(temp.users);
 
     await client.github_issues.upsert({
@@ -136,7 +137,7 @@ async function addGithubDataToDatabase(temp) {
     await calculatePoints(temp.id);
 }
 
-async function deletePointsIfTakenOut(issue_id, data) {
+export async function deletePointsIfTakenOut(issue_id, data) {
     const pointsDbUser = await client.points.findMany({
         where: { issue_id: issue_id },
         select: { user_id: true }
@@ -160,7 +161,7 @@ async function deletePointsIfTakenOut(issue_id, data) {
     }
 }
 
-async function calculatePoints(issue_id) {
+export async function calculatePoints(issue_id) {
     let points;
 
     const data = await client.github_issues.findFirst({ where: { id: issue_id } });
@@ -226,7 +227,7 @@ function getPriority(priority) {
     }
 }
 
-async function addUsers(temp_users) {
+export async function addUsers(temp_users) {
     let userArr = temp_users.split(", ");
     // console.log(userArr);
 
@@ -248,7 +249,7 @@ async function addUsers(temp_users) {
                     await client.users.create({
                     data: {
                         githubLogin: userArr[j],
-                        full_name: await full_name || userArr[j]
+                        full_name: (await full_name) || userArr[j]
                     }
                 });
             } catch (error) {
@@ -257,12 +258,3 @@ async function addUsers(temp_users) {
         }
     }
 }
-
-module.exports = {
-    getGithubData,
-    addGithubDataToDatabase,
-    deletePointsIfTakenOut,
-    calculatePoints,
-    getPriority,
-    addUsers
-};

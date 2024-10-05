@@ -1,16 +1,15 @@
-var express = require('express');
-var router = express.Router();
-var Prisma = require('@prisma/client');
+import express from 'express';
+var sideQuestRouter = express.Router();
+import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
-const { githubData } = require('../controllers')
-
+import { addGithubDataToDatabase, getGithubData } from '../controllers/githubData.controller.js';
 
 /* GET users listing. */
-router.get('/', async function(req, res, next) {
+sideQuestRouter.get('/', async function(req, res, next) {
     let githubResponse = [];
 
     try {
-        const response = await githubData.getGithubData(1);
+        const response = await getGithubData(1);
         const resJson = await response.json();
         const arr = resJson.data.organization.projectV2.items.edges;
     
@@ -38,7 +37,7 @@ router.get('/', async function(req, res, next) {
             }
             temp['users'] = tempUser;
             if (temp.id) {
-                await githubData.addGithubDataToDatabase(temp);
+                await addGithubDataToDatabase(temp);
             }
         });
     
@@ -54,4 +53,4 @@ router.get('/', async function(req, res, next) {
     }
 });
 
-module.exports = router;
+export default sideQuestRouter;

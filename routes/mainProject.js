@@ -1,11 +1,12 @@
-var express = require('express');
-var router = express.Router();
-var Prisma = require('@prisma/client');
+import express from 'express';
+var mainProjectRouter = express.Router();
+import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
-const { githubData, closedBy } = require('../controllers');
+import { closedBy } from '../controllers/closedBy.controller.js';
+import { addUsers, calculatePoints, getGithubData } from '../controllers/githubData.controller.js';
 
 async function addGithubDataToDatabase(temp) {
-        await githubData.addUsers(temp.users);
+        await addUsers(temp.users);
 
         await client.github_issues.upsert({
             where: { id: temp.id },
@@ -22,7 +23,7 @@ async function addGithubDataToDatabase(temp) {
                 numberOfUsers: temp.users.split(", ")[0] === '' ? 0 : temp.users.split(", ").length,
                 closed: temp.closed,
                 closed_at: temp.closed_at,
-                closed_by: await closedBy.closedBy("Optimal-Schedule-Builder", temp.issue_num),
+                closed_by: await closedBy("Optimal-Schedule-Builder", temp.issue_num),
                 issue_number: temp.issue_num
                 
             },
@@ -39,19 +40,19 @@ async function addGithubDataToDatabase(temp) {
                 numberOfUsers: temp.users.split(", ")[0] === '' ? 0 : temp.users.split(", ").length,
                 closed: temp.closed,
                 closed_at: temp.closed_at,
-                closed_by: await closedBy.closedBy("Optimal-Schedule-Builder", temp.issue_num),
+                closed_by: await closedBy("Optimal-Schedule-Builder", temp.issue_num),
                 issue_number: temp.issue_num
             }
         })
-    await githubData.calculatePoints(temp.id);
+    await calculatePoints(temp.id);
 }
 
 
-router.get('/', async function(req, res, next) {
+mainProjectRouter.get('/', async function(req, res, next) {
     let githubResponse = [];
 
     try {
-        const response = await githubData.getGithubData(3);
+        const response = await getGithubData(3);
         const resJson = await response.json();
         const arr = resJson.data.organization.projectV2.items.edges;
     
@@ -94,4 +95,4 @@ router.get('/', async function(req, res, next) {
     }
 });
 
-module.exports = router;
+export default mainProjectRouter;
