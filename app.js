@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import cors from 'cors';
@@ -7,7 +6,6 @@ import indexRouter from './routes/index.js';
 import sideQuestRouter from './routes/sideQuest.js';
 import mainProjectRouter from './routes/mainProject.js';
 import authRouter from './routes/auth.js';
-import e from 'express';
 
 var app = express();
 app.use(cors())
@@ -41,6 +39,6 @@ app.use(function(err, req, res, next) {
 });
 
 /* need to comment out for vercel deployment */
-app.listen(3000, () => console.log('Server ready on port 3000.'))
+// app.listen(3000, () => console.log('Server ready on port 3000.'))
 
 export default app;

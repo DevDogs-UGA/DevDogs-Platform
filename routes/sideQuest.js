@@ -2,14 +2,14 @@ import express from 'express';
 var sideQuestRouter = express.Router();
 import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
-import { addGithubDataToDatabase } from '../controllers/githubData.controller.js';
+import { addGithubDataToDatabase, getGithubData } from '../controllers/githubData.controller.js';
 
 /* GET users listing. */
 sideQuestRouter.get('/', async function(req, res, next) {
     let githubResponse = [];
 
     try {
-        const response = await githubData.getGithubData(1);
+        const response = await getGithubData(1);
         const resJson = await response.json();
         const arr = resJson.data.organization.projectV2.items.edges;
     
