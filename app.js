@@ -6,6 +6,7 @@ import indexRouter from './routes/index.js';
 import sideQuestRouter from './routes/sideQuest.js';
 import mainProjectRouter from './routes/mainProject.js';
 import authRouter from './routes/auth.js';
+import testEnvRouter from './routes/test-env.js';
 
 var app = express();
 app.use(cors())
@@ -20,6 +21,7 @@ app.use('/auth', authRouter)
 
 app.use('/sideQuest', sideQuestRouter);
 app.use('/mainProject', mainProjectRouter)
+app.use('/testing', testEnvRouter)
 
 
 // catch 404 and forward to error handler

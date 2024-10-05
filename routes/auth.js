@@ -85,21 +85,18 @@ authRouter.post('/createUser', async (req, res) => {
                 }
             })
 
-            // var data = {
-            //     from: "reeyan@fantasyfinance.email",
-            //     to: req.body.email_address,
-            //     subject: 'One time verification code from ' + process.env.ORG,
-            //     text: 'The verification code is: ' + code + ". DO NOT SHARE THIS CODE WITH ANYONE. This code will be valid for 5 minutes."
-            //     };
-
             const { data, error } = await email.emails.send({
-              from: "DevDogs <no-reply@devdogs.uga>",
-              to: ["khimanireeyan@gmail.com"],
-              subject: "Email Verification Code",
-              html: "<strong>it works!</strong>",
-            });
-
-            checkEmail(req.body.email_address);
+                from: "DevDogs-UGA <no-reply@resend.dev>",
+                to: ["khimanireeyan@gmail.com"],
+                subject: "Email Verification",
+                html: ``,
+              });
+            
+              if (error) {
+                return res.status(400).json({ error });
+              }
+            
+              res.status(200).json({ data });
         }
     } catch (err) {
         if (err.code == "P2002") {
