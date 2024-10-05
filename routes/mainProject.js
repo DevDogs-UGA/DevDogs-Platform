@@ -1,8 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var Prisma = require('@prisma/client');
+import express from 'express';
+var mainProjectRouter = express.Router();
+import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
-const { githubData, closedBy } = require('../controllers');
+import { closedBy } from '../controllers/closedBy.controller.js';
 
 async function addGithubDataToDatabase(temp) {
         await githubData.addUsers(temp.users);
@@ -47,7 +47,7 @@ async function addGithubDataToDatabase(temp) {
 }
 
 
-router.get('/', async function(req, res, next) {
+mainProjectRouter.get('/', async function(req, res, next) {
     let githubResponse = [];
 
     try {
@@ -94,4 +94,4 @@ router.get('/', async function(req, res, next) {
     }
 });
 
-module.exports = router;
+export default mainProjectRouter;

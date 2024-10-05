@@ -1,12 +1,14 @@
-var express = require('express');
-var router = express.Router();
-var Prisma = require('@prisma/client');
-const password = require('generate-password')
+import express from 'express';
+var authRouter = express.Router();
+import Prisma from '@prisma/client';
+import password from 'generate-password';
 const prisma = new Prisma.PrismaClient();
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken')
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import {Resend} from 'resend';
+const email = new Resend(process.env.RESEND_API_KEY)
 
-const timestamp = require('unix-timestamp');
+import timestamp from 'unix-timestamp';
 timestamp.round = true;
 
 function genPass() {
@@ -17,11 +19,11 @@ function genPass() {
     });
 }
 
-router.get('/', function(req, res, next) {
+authRouter.get('/', function(req, res, next) {
     res.send('Express API is running properly.');
 });
 
-router.post('/createUser', async (req, res) => {
+authRouter.post('/createUser', async (req, res) => {
     if (req.body.first_name == null) {
         res.send({
             code: "MISSING_FIELD_REQURED",
@@ -83,24 +85,22 @@ router.post('/createUser', async (req, res) => {
                 }
             })
 
-            var data = {
-                from: "reeyan@fantasyfinance.email",
-                to: req.body.email_address,
-                subject: 'One time verification code from ' + process.env.ORG,
-                text: 'The verification code is: ' + code + ". DO NOT SHARE THIS CODE WITH ANYONE. This code will be valid for 5 minutes."
-                };
-            
-            mailgun.messages().send(data, function (err, body) {
-                //If there is an error, render the error page
-                if (err) {
-                    console.log(err);
-                }
+            // var data = {
+            //     from: "reeyan@fantasyfinance.email",
+            //     to: req.body.email_address,
+            //     subject: 'One time verification code from ' + process.env.ORG,
+            //     text: 'The verification code is: ' + code + ". DO NOT SHARE THIS CODE WITH ANYONE. This code will be valid for 5 minutes."
+            //     };
+
+            const { data, error } = await email.emails.send({
+              from: "DevDogs <no-reply@devdogs.uga>",
+              to: ["khimanireeyan@gmail.com"],
+              subject: "Email Verification Code",
+              html: "<strong>it works!</strong>",
             });
 
             checkEmail(req.body.email_address);
         }
-
-
     } catch (err) {
         if (err.code == "P2002") {
             res.send({
@@ -125,7 +125,7 @@ router.post('/createUser', async (req, res) => {
 });
 
 // TODO: Add try catch block
-router.get('/getAccessToken', async (req, res) => {
+authRouter.get('/getAccessToken', async (req, res) => {
     const {email_address, password} = req.body;
 
     if (email_address == null) {
@@ -183,7 +183,7 @@ router.get('/getAccessToken', async (req, res) => {
 });
 
 // TODO: Convert into a middleware function to check if user is verified
-router.get('/getUserData', (req, res) => {
+authRouter.get('/getUserData', (req, res) => {
     const token = req.body.token;
     const secret_key = process.env.SECRET_KEY;
 
@@ -210,7 +210,7 @@ router.get('/getUserData', (req, res) => {
     }
 })
 
-router.get('/getNewToken', async (req, res) => {
+authRouter.get('/getNewToken', async (req, res) => {
     const token = req.body.token;
     const refresh_token = req.body.refresh_token;
     const secret_key = process.env.SECRET_KEY;
@@ -318,7 +318,7 @@ router.get('/getNewToken', async (req, res) => {
 
 })
 
-router.post('/resetPassword', async (req, res) => {
+authRouter.post('/resetPassword', async (req, res) => {
     const {email_address, password} = req.body;
 
     if (email_address == null) {
@@ -329,18 +329,19 @@ router.post('/resetPassword', async (req, res) => {
         return;
     }
 
-    const userInfo = await prisma.userInfo.findFirst({
-        where: {
-            email_address: email_address
-        }
-    })
-
-    if (userInfo == null) {
-        res.send({
-            code: "404 NOT FOUND",
-            message: "The user with the email address: " + email_address + " does not exist."
-        })
-        return;
+    let userInfo;
+    try {
+      userInfo = await prisma.userInfo.findFirst({
+          where: {
+              email_address: email_address
+          }
+      })
+    } catch (err) {
+      res.send({
+        code: "404 NOT FOUND",
+        message: "The user with the email address: " + email_address + " does not exist."
+      })
+      return;
     }
 
     // TODO FIGURE OUT A WAY TO VERIFY USER
@@ -365,8 +366,8 @@ router.post('/resetPassword', async (req, res) => {
     })
 });
 
-router.get('*', function(req, res){
+authRouter.get('*', function(req, res){
     res.status(404);
 });
 
-module.exports = router;
+export default authRouter;

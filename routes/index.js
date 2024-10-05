@@ -1,14 +1,14 @@
-var express = require('express');
-var router = express.Router();
-var Prisma = require('@prisma/client');
+import express from 'express';
+var indexRouter = express.Router();
+import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+indexRouter.get('/', function(req, res, next) {
   res.send('Express API is running properly.');
 });
 
-router.get('/getLeaderBoard', async function(req, res, next) {
+indexRouter.get('/getLeaderBoard', async function(req, res, next) {
   try {
     let rawData = await client.points.findMany({
       select: {
@@ -46,4 +46,4 @@ router.get('/getLeaderBoard', async function(req, res, next) {
   }
 });
 
-module.exports = router;
+export default indexRouter;
