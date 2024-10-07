@@ -5,8 +5,9 @@ import password from 'generate-password';
 const prisma = new Prisma.PrismaClient();
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {Resend} from 'resend';
-const email = new Resend(process.env.RESEND_API_KEY)
+import session from 'express-session';
+
+import { sendEmailVerification } from '../controllers/emailVerification.controller.js';
 
 import timestamp from 'unix-timestamp';
 timestamp.round = true;
@@ -18,6 +19,17 @@ function genPass() {
         uppercase: false
     });
 }
+
+authRouter.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+        secure: true, // Set to true in production for HTTPS
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    }
+}));
 
 authRouter.get('/', function(req, res, next) {
     res.send('Express API is running properly.');
@@ -76,7 +88,7 @@ authRouter.post('/createUser', async (req, res) => {
 
         var expireTime = new Date(timestamp.duration("+5m")).toISOString();
 
-        if (process.env.EMAIL_VERIFICATION == 'true') {
+        if (process.env.EMAIL_VERIFICATION == 'TRUE') {
             await prisma.email_verification.create({
                 data: {
                     id: newUser.id,
@@ -85,19 +97,12 @@ authRouter.post('/createUser', async (req, res) => {
                 }
             })
 
-            const { data, error } = await email.emails.send({
-                from: "DevDogs-UGA <no-reply@resend.dev>",
-                to: ["khimanireeyan@gmail.com"],
-                subject: "Email Verification",
-                html: ``,
-              });
-            
-              if (error) {
-                return res.status(400).json({ error });
-              }
-            
-              res.status(200).json({ data });
+            sendEmailVerification(code, req.body.email_address);
         }
+
+        const user_email = newUser.email_address;
+        req.session.user = { user_email };
+        console.log(req.session.user);
     } catch (err) {
         if (err.code == "P2002") {
             res.send({
@@ -361,6 +366,72 @@ authRouter.post('/resetPassword', async (req, res) => {
         code: "200 OK",
         message: "Password reset successful."
     })
+});
+
+function isAuthenticated(req, res, next) {
+    if (req.session.user) {
+        next();
+    } else {
+        res.send({
+            code: "401 UNAUTHORIZED",
+            message: "Unauthorized access to resource."
+        });
+    }
+}
+
+authRouter.get('/login', async (req, res) => {
+    const {email_address, password} = req.body;
+
+    if (email_address == null) {
+        res.send({
+            code: "MISSING_FIELD_REQURED",
+            message: "The 'email_address' field is required."
+        })
+        return;
+    }
+
+    if (password == null) {
+        res.send({
+            code: "MISSING_FIELD_REQURED",
+            message: "The 'password' field is required."
+        })
+        return;
+    }
+
+    const userInfo = await prisma.userInfo.findFirst({
+        where: {
+            email_address: email_address
+        }
+    })
+
+    if (userInfo) {
+        if (bcrypt.compare(password, userInfo.password_hash)) {
+            req.session.user = { user_email: email_address };
+            res.send({
+                code: "200 OK",
+                message: "User logged in successfully."
+            })
+        } else {
+            res.send({
+                code: "401 UNAUTHORIZED",
+                message: "Unauthorized access to resource."
+            })
+        }
+    } else {
+        res.send({
+            code: "404 NOT FOUND",
+            message: "The user with the email address: " + email_address + " does not exist."
+        })
+    }
+});
+
+authRouter.get('/restricted', isAuthenticated, (req, res) => {
+    res.status(200).send(`${req.sessionID} is authenticated.`);
+});
+
+authRouter.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.send('Logged out successfully.');
 });
 
 authRouter.get('*', function(req, res){
