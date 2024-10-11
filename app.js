@@ -10,7 +10,8 @@ import authRouter from './routes/auth.js';
 import testEnvRouter from './routes/test-env.js';
 
 var app = express();
-app.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://dev-dogs-website.vercel.app/', "https://devdogs.uga.edu"] }));
+// app.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://dev-dogs-website.vercel.app/', "https://devdogs.uga.edu"] }));
+app.use(cors());
 
 app.use(logger('dev'));
 app.use(express.json());
