@@ -29,6 +29,7 @@ model users {
   id          Int      @id @default(autoincrement())
   githubLogin String   @unique(map: "users_index_2")
   full_name   String
+  admins      admins?
   points      points[]
 }
 
@@ -64,8 +65,23 @@ model userInfo {
   last_updated  DateTime       @default(now()) @db.Timestamp(6)
   first_name    String
   last_name     String?
-  email_address String
+  email_address String         @unique(map: "userInfo_index_2")
   password_hash String         @db.VarChar(128)
   salt          String         @db.VarChar(32)
   refresh_token refresh_token?
+}
+
+model admins {
+  github_login String    @id
+  term_start   DateTime  @db.Timestamp(6)
+  term_end     DateTime? @db.Timestamp(6)
+  users        users     @relation(fields: [github_login], references: [githubLogin], onDelete: Cascade, map: "admins_relation_1")
+}
+
+model session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
 }

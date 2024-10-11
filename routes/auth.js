@@ -6,11 +6,15 @@ const prisma = new Prisma.PrismaClient();
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+session.Store = connectPgSimple(session);
 
 import { sendEmailVerification } from '../controllers/emailVerification.controller.js';
 
 import timestamp from 'unix-timestamp';
 timestamp.round = true;
+
+import {v4 as uuidv4} from 'uuid';
 
 function genPass() {
     return password.generate({
@@ -22,13 +26,19 @@ function genPass() {
 
 authRouter.use(session({
     secret: process.env.SESSION_SECRET,
+    store: new (connectPgSimple(session))({
+        conString: process.env.DATABASE_URL
+    }),
     resave: false,
     saveUninitialized: false,
     proxy: true,
     cookie: {
-        secure: true, // Set to true in production for HTTPS
+        secure: false, // Set to true in production for HTTPS
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
-    }
+    },
+    genid: function(req) {
+        return uuidv4() // use UUIDs for session IDs
+    },
 }));
 
 authRouter.get('/', function(req, res, next) {
@@ -128,60 +138,89 @@ authRouter.post('/createUser', async (req, res) => {
 
 // TODO: Add try catch block
 authRouter.get('/getAccessToken', async (req, res) => {
-    const {email_address, password} = req.body;
-
-    if (email_address == null) {
-        res.send({
-            code: "MISSING_FIELD_REQURED",
-            message: "The 'email_address' field is required."
-        })
-        return;
-    }
-    
-    if (password == null) {
-        res.send({
-            code: "MISSING_FIELD_REQURED",
-            message: "The 'password' field is required."
-        })
-        return;
-    }
-
-    const secret_key = process.env.SECRET_KEY;
-
-    const userInfo = await prisma.userInfo.findFirst({
-        where: {
-            email_address: email_address,
-        },
-    })
-
-    const hash = await bcrypt.hash(password, userInfo.salt);
-    if (userInfo.password_hash === hash) {
-        const token = jwt.sign({
-            sub: process.env.ORG,
-            scopes: "user",
-            userId: userInfo.id,
-            iat: timestamp.now(),
-            exp: timestamp.add(timestamp.now(), "+5m")
-        }, secret_key)
-
-        let refresh_token = await prisma.refresh_token.findFirst({
+    if (isAuthenticated) {
+        const userInfo = await prisma.userInfo.findFirst({
             where: {
-                userId: userInfo.id
+                email_address: email_address,
             },
-            select: {
-                refresh_token: true
-            }
-        })
-        refresh_token = refresh_token.refresh_token
+        });
+    
+        const hash = await bcrypt.hash(password, userInfo.salt);
+        if (userInfo.password_hash === hash) {
+            const token = jwt.sign({
+                sub: process.env.ORG,
+                scopes: "user",
+                userId: userInfo.id,
+                iat: timestamp.now(),
+                exp: timestamp.add(timestamp.now(), "+5m")
+            }, secret_key)
+    
+            let refresh_token = await prisma.refresh_token.findFirst({
+                where: {
+                    userId: userInfo.id
+                },
+                select: {
+                    refresh_token: true
+                }
+            })
+            refresh_token = refresh_token.refresh_token
+    
+            res.send({token, refresh_token});
+    }} else {
+        const {email_address, password} = req.body;
 
-        res.send({token, refresh_token});
-    } else {
-        res.status(401).send({
-            code: "401 UNAUTHORIZED",
-            message: "Unauthorized access to resource."
+        if (email_address == null) {
+            res.send({
+                code: "MISSING_FIELD_REQURED",
+                message: "The 'email_address' field is required."
+            })
+            return;
+        }
+        
+        if (password == null) {
+            res.send({
+                code: "MISSING_FIELD_REQURED",
+                message: "The 'password' field is required."
+            })
+            return;
+        }
+    
+        const secret_key = process.env.SECRET_KEY;
+    
+        const userInfo = await prisma.userInfo.findFirst({
+            where: {
+                email_address: email_address,
+            },
         })
+    
+        const hash = await bcrypt.hash(password, userInfo.salt);
+        if (userInfo.password_hash === hash) {
+            const token = jwt.sign({
+                sub: process.env.ORG,
+                scopes: "user",
+                userId: userInfo.id,
+                iat: timestamp.now(),
+                exp: timestamp.add(timestamp.now(), "+5m")
+            }, secret_key)
+    
+            let refresh_token = await prisma.refresh_token.findFirst({
+                where: {
+                    userId: userInfo.id
+                },
+                select: {
+                    refresh_token: true
+                }
+            })
+            refresh_token = refresh_token.refresh_token
+    
+            res.send({token, refresh_token});
+        } else {
+            res.status(401).send({
+                code: "401 UNAUTHORIZED",
+                message: "Unauthorized access to resource."
+            })
+        }
     }
-
 });
 
 // TODO: Convert into a middleware function to check if user is verified
@@ -372,12 +411,16 @@ function isAuthenticated(req, res, next) {
     if (req.session.user) {
         next();
     } else {
-        res.send({
+        res.status(401).send({
             code: "401 UNAUTHORIZED",
-            message: "Unauthorized access to resource."
+            message: "Unauthorized access to resource. Session Id: " + req.sessionID
         });
     }
 }
+
+authRouter.get('/session',(req, res) => {
+    res.send(req.sessionID);
+});
 
 authRouter.get('/login', async (req, res) => {
     const {email_address, password} = req.body;
