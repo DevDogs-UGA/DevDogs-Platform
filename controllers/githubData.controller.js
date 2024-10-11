@@ -1,5 +1,4 @@
 import Prisma from '@prisma/client';
-import { closedBy } from './closedBy.controller.js';
 
 const client = new Prisma.PrismaClient();
 
@@ -25,6 +24,18 @@ export async function getGithubData(projectNum) {
                                             closed
                                             closedAt
                                             number
+                                            timeline(last: 100) {
+                                                edges {
+                                                    node {
+                                                        __typename
+                                                        ... on ClosedEvent {
+                                                            actor {
+                                                                login
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     fieldValues(first: 20) {
@@ -93,6 +104,38 @@ export async function getGithubData(projectNum) {
     return response;
 }
 
+const isTimestampInRange = (startTimestamp, endTimestamp, checkTimestamp) => {
+    // Convert the timestamps to Date objects
+    const startDate = new Date(startTimestamp);
+    const endDate = new Date(endTimestamp);
+    const checkDate = new Date(checkTimestamp);
+  
+    // Check if the third timestamp is between the first two
+    return checkDate >= startDate && checkDate <= endDate;
+  };
+
+async function confirmClosedBy(data, time) {
+    try {
+        const user = await client.admins.findFirst({
+            where: {
+                github_login: data
+            }
+        })
+
+        const user_term_end = user.term_end ? user.term_end : new Date('2025-12-31T23:59:59.999Z');
+        
+        if (user && isTimestampInRange(user.term_start, user_term_end, time)) {
+            return true;
+        } else {
+            return false;
+        }
+        
+    } catch (err) {
+        console.log(err)
+        return false;
+    }
+}
+
 // only for DevDogs-website
 export async function addGithubDataToDatabase(temp) {
     await addUsers(temp.users);
@@ -112,7 +155,7 @@ export async function addGithubDataToDatabase(temp) {
             numberOfUsers: temp.users.split(", ")[0] === '' ? 0 : temp.users.split(", ").length,
             closed: temp.closed,
             closed_at: temp.closed_at,
-            closed_by: await closedBy("DevDogs-Website", temp.issue_num),
+            closed_by: temp.closed_by,
             issue_number: temp.issue_num
             
         },
@@ -129,7 +172,7 @@ export async function addGithubDataToDatabase(temp) {
             numberOfUsers: temp.users.split(", ")[0] === '' ? 0 : temp.users.split(", ").length,
             closed: temp.closed,
             closed_at: temp.closed_at,
-            closed_by: await closedBy("DevDogs-Website", temp.issue_num),
+            closed_by: temp.closed_by,
             issue_number: temp.issue_num
         }
     })
@@ -166,7 +209,8 @@ export async function calculatePoints(issue_id) {
 
     const data = await client.github_issues.findFirst({ where: { id: issue_id } });
 
-    if (data.closed === true) {
+    if (data.closed === true && await confirmClosedBy(data.closed_by, data.closed_at)) {
+        console.log('Issue is done');
         // formula to calculate points
         points = ((data.time_estimate / 60) * ((data.quality/3)*(50) + (data.priority/3)*(25) + (data.complexity/3)*(25))) || null;
         
@@ -186,7 +230,6 @@ export async function calculatePoints(issue_id) {
                 }
 
                 if (pointsExist) {
-                    // console.log('Points already exist');
                     await client.points.updateMany({
                         where: { issue_id: issue_id, user_id: user },
                         data: {
@@ -210,6 +253,9 @@ export async function calculatePoints(issue_id) {
         }
     } else {
         // console.log('Issue is not done');
+        // if (await confirmClosedBy(data.closed_by)) {
+        //     console.log('Issue closed by unauthorized user.');
+        // }
     }
 }
 
@@ -237,7 +283,6 @@ export async function addUsers(temp_users) {
         } else {
             try {
                 let url = `https://api.github.com/users/` + userArr[j];
-                console.log(url);
                 let full_name = await fetch(url, {
                     headers: {
                         'Authorization': `bearer ${process.env.GITHUB_TOKEN}`,
@@ -245,13 +290,16 @@ export async function addUsers(temp_users) {
                 })
                     .then((res) => res.json()).then((res) => res.name);
                 
-                    console.log(await full_name);
-                    await client.users.create({
-                    data: {
-                        githubLogin: userArr[j],
-                        full_name: (await full_name) || userArr[j]
+                    try {
+                        await client.users.create({
+                            data: {
+                                githubLogin: userArr[j],
+                                full_name: (await full_name) || userArr[j]
+                            }
+                        });
+                    } catch (err) {
+                        // Do nothing
                     }
-                });
             } catch (error) {
                 console.log(error);
             }

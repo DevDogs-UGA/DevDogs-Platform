@@ -27,6 +27,7 @@ sideQuestRouter.get('/', async function(req, res, next) {
             temp['closed'] = element.node.content.closed;
             temp['closed_at'] = element.node.content.closedAt;
             temp['issue_num'] = element.node.content.number;
+            temp.closed_by = element.node.content.timeline?.edges?.find((item) => item.node.__typename === 'ClosedEvent')?.node.actor.login;
             var assignees = element.node.fieldValues.nodes.find((item) => item.field?.name === 'Assignees');
             var tempUser = "";
             for (let i = 0; i < assignees?.users.nodes.length; i++) {
@@ -44,7 +45,6 @@ sideQuestRouter.get('/', async function(req, res, next) {
         // Wait for all promises to resolve
         await Promise.all(promises);
     
-        // Now that all operations are complete, send the response
         // console.log(githubResponse);
         res.status(200).send('Operation completed successfully');
     } catch (error) {

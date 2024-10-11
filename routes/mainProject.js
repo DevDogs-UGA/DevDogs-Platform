@@ -2,7 +2,6 @@ import express from 'express';
 var mainProjectRouter = express.Router();
 import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
-import { closedBy } from '../controllers/closedBy.controller.js';
 import { addUsers, calculatePoints, getGithubData } from '../controllers/githubData.controller.js';
 
 async function addGithubDataToDatabase(temp) {
@@ -23,7 +22,7 @@ async function addGithubDataToDatabase(temp) {
                 numberOfUsers: temp.users.split(", ")[0] === '' ? 0 : temp.users.split(", ").length,
                 closed: temp.closed,
                 closed_at: temp.closed_at,
-                closed_by: await closedBy("Optimal-Schedule-Builder", temp.issue_num),
+                closed_by: temp.closed_by,
                 issue_number: temp.issue_num
                 
             },
@@ -40,7 +39,7 @@ async function addGithubDataToDatabase(temp) {
                 numberOfUsers: temp.users.split(", ")[0] === '' ? 0 : temp.users.split(", ").length,
                 closed: temp.closed,
                 closed_at: temp.closed_at,
-                closed_by: await closedBy("Optimal-Schedule-Builder", temp.issue_num),
+                closed_by: await temp.closed_by,
                 issue_number: temp.issue_num
             }
         })
@@ -70,6 +69,7 @@ mainProjectRouter.get('/', async function(req, res, next) {
             temp['closed'] = element.node.content.closed;
             temp['closed_at'] = element.node.content.closedAt;
             temp['issue_num'] = element.node.content.number;
+            temp.closed_by = element.node.content.timeline?.edges?.find((item) => item.node.__typename === 'ClosedEvent')?.node.actor.login;
             var assignees = element.node.fieldValues.nodes.find((item) => item.field?.name === 'Assignees');
             var tempUser = "";
             for (let i = 0; i < assignees?.users.nodes.length; i++) {
