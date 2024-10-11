@@ -3,9 +3,11 @@ var mainProjectRouter = express.Router();
 import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
 import { addUsers, calculatePoints, getGithubData } from '../controllers/githubData.controller.js';
+import { waitUntil } from '@vercel/functions';
 
 async function addGithubDataToDatabase(temp) {
         await addUsers(temp.users);
+        await addUsers(temp.closed_by);
 
         await client.github_issues.upsert({
             where: { id: temp.id },
@@ -46,10 +48,7 @@ async function addGithubDataToDatabase(temp) {
     await calculatePoints(temp.id);
 }
 
-
-mainProjectRouter.get('/', async function(req, res, next) {
-    let githubResponse = [];
-
+async function asyncFunction() {
     try {
         const response = await getGithubData(3);
         const resJson = await response.json();
@@ -79,7 +78,6 @@ mainProjectRouter.get('/', async function(req, res, next) {
                 }
             }
             temp['users'] = tempUser;
-            console.log(temp)
             if (temp.id) {
                 await addGithubDataToDatabase(temp);
             }
@@ -87,12 +85,23 @@ mainProjectRouter.get('/', async function(req, res, next) {
     
         // Wait for all promises to resolve
         await Promise.all(promises);
+        console.log("Operation completed successfully");
     
-        res.status(200).send('Operation completed successfully');
+        return "Operation completed successfully";
     } catch (error) {
         console.error(error);
-        res.status(500).send('Internal Server Error');
+        // res.status(500).send('Internal Server Error');
+        return "Internal Server Error"
     }
+}
+
+
+mainProjectRouter.get('/', async function(req, res, next) {
+    res.send("Main Project Router is working");
+
+    waitUntil(
+        asyncFunction()
+    );
 });
 
 export default mainProjectRouter;

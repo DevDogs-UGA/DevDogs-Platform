@@ -3,11 +3,9 @@ var sideQuestRouter = express.Router();
 import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
 import { addGithubDataToDatabase, getGithubData } from '../controllers/githubData.controller.js';
+import { waitUntil } from '@vercel/functions';
 
-/* GET users listing. */
-sideQuestRouter.get('/', async function(req, res, next) {
-    let githubResponse = [];
-
+async function asyncFunction() {
     try {
         const response = await getGithubData(1);
         const resJson = await response.json();
@@ -46,11 +44,24 @@ sideQuestRouter.get('/', async function(req, res, next) {
         await Promise.all(promises);
     
         // console.log(githubResponse);
-        res.status(200).send('Operation completed successfully');
+        // res.status(200).send('Operation completed successfully');
+        console.log("Operation completed successfully");
+        return "Operation completed successfully";
     } catch (error) {
         console.error(error);
-        res.status(500).send('Internal Server Error');
+        // res.status(500).send('Internal Server Error');
+        console.log("Internal Server Error")
+        return "Internal Server Error"
     }
+}
+
+/* GET users listing. */
+sideQuestRouter.get('/', async function(req, res, next) {
+    res.send("Side Quest Router is working");
+
+    waitUntil (
+        asyncFunction()
+    );
 });
 
 export default sideQuestRouter;
