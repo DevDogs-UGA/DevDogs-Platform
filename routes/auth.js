@@ -33,7 +33,7 @@ authRouter.use(session({
     saveUninitialized: false,
     proxy: true,
     cookie: {
-        secure: true, // Set to true in production for HTTPS
+        secure: false, // Set to true in production for HTTPS
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
     },
     genid: function(req) {
@@ -419,11 +419,21 @@ function isAuthenticated(req, res, next) {
 }
 
 authRouter.get('/session',(req, res) => {
-    res.send(req.sessionID);
+    console.log("this is req.session", req.session);
+    if (req.session.user) {
+        res.send({
+            code: "200 OK",
+            message: "Session is active."
+        })
+    } else {
+        res.status(401).send({
+            code: "401 UNAUTHORIZED",
+            message: "Session is not active."
+        })
+    }
 });
 
-authRouter.get('/login', async (req, res) => {
-    console.log(req.body)
+authRouter.post('/login', async (req, res) => {
     const {email_address, password} = req.body;
 
     if (email_address == null) {
@@ -467,6 +477,8 @@ authRouter.get('/login', async (req, res) => {
             message: "The user with the email address: " + email_address + " does not exist."
         })
     }
+
+    req.session.user = { user_email: email_address };
 });
 
 authRouter.get('/restricted', isAuthenticated, (req, res) => {
@@ -474,7 +486,11 @@ authRouter.get('/restricted', isAuthenticated, (req, res) => {
 });
 
 authRouter.get('/logout', (req, res) => {
+    console.log(req.cookies);
+    console.log(req.session);
     req.session.destroy();
+    res.clearCookie('connect.sid')
+    console.log(req.session)
     res.send('Logged out successfully.');
 });
 
