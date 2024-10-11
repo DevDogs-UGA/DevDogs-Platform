@@ -1,5 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 import logger from 'morgan';
 import cors from 'cors';
 import indexRouter from './routes/index.js';
@@ -15,6 +16,8 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+app.use(bodyParser.json());
 
 app.use('/', indexRouter);
 app.use('/auth', authRouter)

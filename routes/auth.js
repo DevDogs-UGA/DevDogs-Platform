@@ -33,7 +33,7 @@ authRouter.use(session({
     saveUninitialized: false,
     proxy: true,
     cookie: {
-        secure: false, // Set to true in production for HTTPS
+        secure: true, // Set to true in production for HTTPS
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
     },
     genid: function(req) {
@@ -423,6 +423,7 @@ authRouter.get('/session',(req, res) => {
 });
 
 authRouter.get('/login', async (req, res) => {
+    console.log(req.body)
     const {email_address, password} = req.body;
 
     if (email_address == null) {
