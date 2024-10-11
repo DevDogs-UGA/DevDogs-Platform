@@ -122,9 +122,9 @@ async function confirmClosedBy(data, time) {
             }
         })
 
-        const user_term_end = user.term_end ? user.term_end : new Date('2025-12-31T23:59:59.999Z');
+        // const user_term_end = user.term_end ? user.term_end : new Date('2025-12-31T23:59:59.999Z');
         
-        if (user && isTimestampInRange(user.term_start, user_term_end, time)) {
+        if (user && isTimestampInRange(user.term_start, user.term_end, time)) {
             return true;
         } else {
             return false;
@@ -139,6 +139,7 @@ async function confirmClosedBy(data, time) {
 // only for DevDogs-website
 export async function addGithubDataToDatabase(temp) {
     await addUsers(temp.users);
+    await addUsers(temp.closed_by);
 
     await client.github_issues.upsert({
         where: { id: temp.id },
@@ -274,7 +275,12 @@ function getPriority(priority) {
 }
 
 export async function addUsers(temp_users) {
-    let userArr = temp_users.split(", ");
+    let userArr;
+    try {
+        userArr = temp_users.split(", ");
+    } catch (err) {
+        userArr = [];
+    }
     // console.log(userArr);
 
     for (var j = 0; j < userArr.length; j++) {
