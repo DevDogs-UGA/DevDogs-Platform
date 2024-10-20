@@ -6,6 +6,7 @@ export async function getGithubData(projectNum) {
     const response = await fetch('https://api.github.com/graphql', {
         method: 'POST',
         headers: {
+            // eslint-disable-next-line no-undef
             'Authorization': `bearer ${process.env.GITHUB_TOKEN}`,
         },
         body: JSON.stringify({
@@ -226,6 +227,7 @@ export async function calculatePoints(issue_id) {
                 try {
                     await client.points.findFirstOrThrow({ where: { issue_id: issue_id, user_id: user } })
                     pointsExist = true;
+                // eslint-disable-next-line no-unused-vars
                 } catch (error) {
                     // console.log('Points do not exist');
                 }
@@ -260,24 +262,26 @@ export async function calculatePoints(issue_id) {
     }
 }
 
-function getPriority(priority) {
-    if (priority === 1) {
-        return 4;
-    } else if (priority === 2) {
-        return 3;
-    } else if (priority === 3) {
-        return 2;
-    } else if (priority === 4) {
-        return 1;
-    } else {
-        return null;
-    }
-}
+// function getPriority(priority) {
+//     if (priority === 1) {
+//         return 4;
+//     } else if (priority === 2) {
+//         return 3;
+//     } else if (priority === 3) {
+//         return 2;
+//     } else if (priority === 4) {
+//         return 1;
+//     } else {
+//         return null;
+//     }
+// }
 
 export async function addUsers(temp_users) {
     let userArr;
+    let data;
     try {
         userArr = temp_users.split(", ");
+    // eslint-disable-next-line no-unused-vars
     } catch (err) {
         userArr = [];
     }
@@ -291,18 +295,20 @@ export async function addUsers(temp_users) {
                 let url = `https://api.github.com/users/` + userArr[j];
                 let full_name = await fetch(url, {
                     headers: {
+                        // eslint-disable-next-line no-undef
                         'Authorization': `bearer ${process.env.GITHUB_TOKEN}`,
                     },
                 })
                     .then((res) => res.json()).then((res) => res.name);
                 
                     try {
-                        await client.users.create({
+                        data = await client.users.create({
                             data: {
                                 githubLogin: userArr[j],
                                 full_name: (await full_name) || userArr[j]
                             }
                         });
+                    // eslint-disable-next-line no-unused-vars
                     } catch (err) {
                         // Do nothing
                     }
@@ -310,5 +316,9 @@ export async function addUsers(temp_users) {
                 console.log(error);
             }
         }
+    }
+
+    if (data !== null) {
+        return data;
     }
 }
