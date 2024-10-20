@@ -82,7 +82,6 @@ export const sessionObject = session({
     cookie: {
         secure: true, // Set to true in production for HTTPS
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        httpOnly: true
     },
     genid: function(req) {
         return uuidv4() // use UUIDs for session IDs
@@ -238,7 +237,7 @@ authRouter.post('/createUser', async (req, res) => {
 
         req.session.user = { user_email: req.body.email_address };
         req.session.refresh_token = refresh.refresh_token;
-        res.send({
+        res.status(200).send({
             code: "200 OK",
             message: "User created successfully.",
             access_token: jwt.sign({
@@ -619,7 +618,7 @@ authRouter.post('/login', async (req, res) => {
             req.session.refresh_token = await userInfo.refresh_token.refresh_token;
             console.log(req.session)
 
-            res.send({
+            res.status(200).send({
                 code: "200 OK",
                 message: "User logged in successfully.",
                 access_token: jwt.sign({
