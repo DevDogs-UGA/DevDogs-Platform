@@ -567,7 +567,7 @@ authRouter.get('/session',(req, res) => {
     console.log("hi", req.session.id)
 
     if (req.session.user) {
-        res.send({
+        res.status(200).send({
             code: "200 OK",
             message: "Session is active."
         })
