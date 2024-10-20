@@ -10,8 +10,6 @@ import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 session.Store = connectPgSimple(session);
 
-import { sendEmailVerification } from '../controllers/emailVerification.controller.js';
-
 import timestamp from 'unix-timestamp';
 timestamp.round = true;
 
@@ -236,7 +234,7 @@ authRouter.post('/createUser', async (req, res) => {
             }
         })
 
-        sendEmailVerification(code, req.body.email_address);
+        // sendEmailVerification(code, req.body.email_address);
 
         req.session.user = { user_email: req.body.email_address };
         req.session.refresh_token = refresh.refresh_token;
