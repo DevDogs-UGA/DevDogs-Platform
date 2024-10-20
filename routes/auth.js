@@ -82,6 +82,7 @@ export const sessionObject = session({
     cookie: {
         secure: true, // Set to true in production for HTTPS
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        domain: ".uga.edu"
     },
     genid: function(req) {
         return uuidv4() // use UUIDs for session IDs
