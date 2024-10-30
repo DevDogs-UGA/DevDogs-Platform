@@ -14,7 +14,7 @@ export async function getGithubData(projectNum) {
             query DevDogs {
                 organization(login: "DevDogs-UGA") {
                     projectV2(number: ${projectNum}) {
-                        items(first: 100) {
+                        items(last: 100) {
                             totalCount
                             edges {
                                 node {
