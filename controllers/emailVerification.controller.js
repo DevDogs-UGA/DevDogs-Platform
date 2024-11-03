@@ -216,7 +216,7 @@ export async function sendEmailVerification(code, email_address) {
                             </table>
                             <p>If the button doesn't work, copy and paste the link below in your browser to verify your email.</p>
                             <a href="https://api.devdogs.uga.edu/auth/email_verification?code=${code}&email=${email_address}">
-                                If the button doesn't work, copy and paste the link below in your browser to verify your email.
+                                https://api.devdogs.uga.edu/auth/email_verification?code=${code}&email=${email_address}
                             </a>
                             <p>Thanks,<br>DevDogs</p>
                           </td>
