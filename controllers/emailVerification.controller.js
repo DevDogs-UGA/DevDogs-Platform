@@ -209,11 +209,15 @@ export async function sendEmailVerification(code, email_address) {
                                     <w:anchorlock/>
                                     <center style="color:#ffffff;font-family:sans-serif;font-size:15px;">Verify Email</center>
                                   </v:roundrect><![endif]-->
-                                    <a class="button button--blue" href='https://api.devdogs.uga.edu/auth/email_verification?code=${code}&email=${email_address}'>Click this link or copy and paste the link below in your browser to verify your email.</a>
+                                    <a class="button button--blue" href='https://api.devdogs.uga.edu/auth/email_verification?code=${code}&email=${email_address}'>Click here</a>
                                   </div>
                                 </td>
                               </tr>
                             </table>
+                            <p>If the button doesn't work, copy and paste the link below in your browser to verify your email.</p>
+                            <a href="https://api.devdogs.uga.edu/auth/email_verification?code=${code}&email=${email_address}">
+                                If the button doesn't work, copy and paste the link below in your browser to verify your email.
+                            </a>
                             <p>Thanks,<br>DevDogs</p>
                           </td>
                         </tr>
