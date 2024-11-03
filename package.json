@@ -26,6 +26,7 @@
     "morgan": "~1.9.1",
     "query-string": "^9.1.1",
     "resend": "^4.0.0",
+    "serve-favicon": "^2.5.0",
     "unix-timestamp": "^1.1.0",
     "uuid": "^10.0.0"
   },

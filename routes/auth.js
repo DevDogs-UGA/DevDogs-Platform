@@ -6,9 +6,15 @@ const prisma = new Prisma.PrismaClient();
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
-import session, { Store } from 'express-session';
+import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 session.Store = connectPgSimple(session);
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 import timestamp from 'unix-timestamp';
 timestamp.round = true;
@@ -80,11 +86,13 @@ export const sessionObject = session({
     saveUninitialized: true,
     proxy: true,
     cookie: {
-        secure: true, // Set to true in production for HTTPS
+        secure: false, // Set to true in production for HTTPS
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        domain: ".uga.edu"
+        domain: ".uga.edu",
+        sameSite: "lax",
+        httpOnly: "true"
     },
-    genid: function(req) {
+    genid: function() {
         return uuidv4() // use UUIDs for session IDs
     },
 })
@@ -224,7 +232,7 @@ authRouter.post('/createUser', async (req, res) => {
             }
         })
 
-        var expireTime = new Date(new Date().getTime() + 5 * 60 * 1000);
+        var expireTime = new Date(new Date().getTime() + 30 * 60 * 1000);
 
         await prisma.email_verification.create({
             data: {
@@ -716,6 +724,62 @@ authRouter.post('/verifyEmail', async (req, res) => {
             code: "401 UNAUTHORIZED",
             message: "Unauthorized access to resource."
         })
+    }
+});
+
+authRouter.get('/email_verification', async (req, res) => {
+    const verification_code  = req.query?.verification_code;
+    const email = req.query?.email;
+
+    if (!email || !verification_code) {
+        res.status(500).send("Invalid request")
+        return
+    }
+
+    let db_code = await prisma.userInfo.findFirst({
+        where: {
+            email_address: email
+        },
+        select: {
+            email_verification: {
+                select: {
+                    code: true,
+                    expireTimestamp: true,
+                    id: true
+                }
+            }
+        }
+    })
+    console.log(db_code)
+    if (db_code == null) {
+        res.send("Invalid email")
+        return
+    }
+
+    let expires = await db_code.email_verification.expireTimestamp
+
+    const code = await db_code.email_verification.code
+
+    const expired = new Date() >= new Date(await expires);
+    console.log(expired);
+
+    if (expired) {
+        res.send("Email verification code invalid. Please request new code.")
+        return;
+    }
+
+    if (verification_code === code) {
+        await prisma.email_verification.updateMany({
+            where: {
+                id: await db_code.email_verification.id
+            },
+            data: {
+                verified: true
+            }
+        })
+        res.sendFile(path.join(__dirname, 'src', 'email_verification.html'));
+    } else {
+        res.send("Unauthorized")
     }
 });
 

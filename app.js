@@ -9,10 +9,20 @@ import mainProjectRouter from './routes/mainProject.js';
 import authRouter from './routes/auth.js';
 import testEnvRouter from './routes/test-env.js';
 import userRouter from './routes/users.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import serveFavicon from 'serve-favicon';
 
 var app = express();
 app.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://dev-dogs-website.vercel.app/', "https://devdogs.uga.edu"] }));
 // app.use(cors());
+
+app.use(serveFavicon(path.join(__dirname, 'public', 'favicon.ico'))); 
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -47,6 +57,6 @@ app.use(function(err, req, res) {
 });
 
 /* need to comment out for vercel deployment */
-// app.listen(3000, () => console.log('Server ready on port 3000.'))
+app.listen(3000, () => console.log('Server ready on port 3000.'))
 
 export default app;
