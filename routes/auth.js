@@ -729,7 +729,7 @@ authRouter.post('/verifyEmail', async (req, res) => {
 });
 
 authRouter.get('/email_verification', async (req, res) => {
-    const verification_code  = req.query?.verification_code;
+    const verification_code  = req.query?.code;
     const email = req.query?.email;
 
     if (!email || !verification_code) {
