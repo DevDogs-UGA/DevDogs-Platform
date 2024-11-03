@@ -4,7 +4,7 @@ const email = new Resend(process.env.RESEND_API_KEY)
 
 export async function sendEmailVerification(code, email_address) {
     const { error } = await email.emails.send({
-        from: "DevDogs-UGA <devdogs@resend.dev>",
+        from: "DevDogs-UGA <no-reply@devdogs.uga.edu>",
         to: [email_address],
         subject: "Email Verification",
         html: `
