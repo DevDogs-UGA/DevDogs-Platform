@@ -12,6 +12,7 @@ session.Store = connectPgSimple(session);
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { sendEmailVerification } from '../controllers/emailVerification.controller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -242,7 +243,7 @@ authRouter.post('/createUser', async (req, res) => {
             }
         })
 
-        // sendEmailVerification(code, req.body.email_address);
+        sendEmailVerification(code, req.body.email_address);
 
         req.session.user = { user_email: req.body.email_address };
         req.session.refresh_token = refresh.refresh_token;
@@ -498,7 +499,7 @@ authRouter.get('/getNewToken', async (req, res) => {
 
 })
 
-authRouter.post('/resetPassword', async (req, res) => {
+authRouter.post('/resetPassword', isAuthenticated, checkJWT, async (req, res) => {
     const {email_address, password} = req.body;
 
     if (email_address == null) {
