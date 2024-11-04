@@ -68,7 +68,7 @@ async function asyncFunction() {
             temp['closed'] = element.node.content.closed;
             temp['closed_at'] = element.node.content.closedAt;
             temp['issue_num'] = element.node.content.number;
-            temp.closed_by = element.node.content.timeline?.edges?.find((item) => item.node.__typename === 'ClosedEvent')?.node.actor.login;
+            temp.closed_by = [...element.node.content.timeline?.edges].reverse().find((item) => item.node.__typename === 'ClosedEvent')?.node.actor.login;
             var assignees = element.node.fieldValues.nodes.find((item) => item.field?.name === 'Assignees');
             var tempUser = "";
             for (let i = 0; i < assignees?.users.nodes.length; i++) {

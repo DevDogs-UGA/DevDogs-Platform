@@ -56,7 +56,6 @@ app.use(function(err, req, res) {
   res.render('error');
 });
 
-/* need to comment out for vercel deployment */
-app.listen(3000, () => console.log('Server ready on port 3000.'))
+app.listen(4000, () => console.log('Server ready on port 4000.'))
 
 export default app;
