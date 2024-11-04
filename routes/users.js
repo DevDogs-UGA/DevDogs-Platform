@@ -34,6 +34,11 @@ userRouter.get('/user_page',isAuthenticated, checkJWT, async function(req, res) 
             select: {
               githubLogin: true
             }
+          },
+          email_verification: {
+            select: {
+              verified: true
+            }
           }
         }
       }
