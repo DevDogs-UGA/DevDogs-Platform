@@ -363,6 +363,29 @@ authRouter.get('/getAccessToken', async (req, res) => {
     }
 });
 
+authRouter.get("/resendEmail", checkJWT, isAuthenticated, async (req, res) => {
+    const userId = req.user;
+
+    const code = password.generate({
+        length: 6,
+        numbers: true
+    })
+
+    const expireTime = new Date(new Date().getTime() + 30 * 60 * 1000);
+
+    await prisma.email_verification.update({
+        where: {
+            id: userId
+        },
+        data: {
+            code: code,
+            expireTimestamp: expireTime
+        }
+    })
+
+    res.status(200).send("Email sent!")
+})
+
 // TODO: Convert into a middleware function to check if user is verified
 authRouter.get('/getUserData', (req, res) => {
     const token = req.body.token;
