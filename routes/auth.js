@@ -373,6 +373,17 @@ authRouter.get("/resendEmail", checkJWT, isAuthenticated, async (req, res) => {
 
     const expireTime = new Date(new Date().getTime() + 30 * 60 * 1000);
 
+    let email = await prisma.userInfo.findFirst({
+        where: {
+            id: userId
+        },
+        select: {
+            email_address: true
+        }
+    })
+
+    email = await email.email_address;
+
     await prisma.email_verification.update({
         where: {
             id: userId
@@ -383,6 +394,7 @@ authRouter.get("/resendEmail", checkJWT, isAuthenticated, async (req, res) => {
         }
     })
 
+    sendEmailVerification(code, email);
     res.status(200).send("Email sent!")
 })
 
