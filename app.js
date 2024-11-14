@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
 import serveFavicon from 'serve-favicon';
 
 var app = express();
-app.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://dev-dogs-website.vercel.app/', "https://devdogs.uga.edu"] }));
+app.use(cors({ credentials: true, origin: ['http://localhost:3000', 'https://dev-dogs-website.vercel.app/', "https://devdogs.uga.edu"] }));
 // app.use(cors());
 
 app.use(serveFavicon(path.join(__dirname, 'public', 'favicon.ico'))); 

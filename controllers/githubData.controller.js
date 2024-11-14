@@ -137,6 +137,10 @@ async function confirmClosedBy(data, time) {
     }
 }
 
+export async function deleteExtraPoints() {
+    
+}
+
 // only for DevDogs-website
 export async function addGithubDataToDatabase(temp) {
     await addUsers(temp.users);
