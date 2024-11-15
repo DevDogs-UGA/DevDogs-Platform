@@ -106,3 +106,14 @@ model user_page {
   paid           Boolean  @default(false)
   userInfo       userInfo @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_page_relation_1")
 }
+
+model unbound_data {
+  id              Int     @id @default(autoincrement())
+  uga_email       String? @db.VarChar(255)
+  personal_email  String? @db.VarChar(255)
+  discord         String? @db.VarChar(255)
+  legal_first     String? @db.VarChar(255)
+  preferred_first String? @db.VarChar(255)
+  last_name       String? @db.VarChar(255)
+  discord_uid     String? @db.VarChar(255)
+}

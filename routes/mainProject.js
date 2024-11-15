@@ -3,6 +3,7 @@ var mainProjectRouter = express.Router();
 import Prisma from '@prisma/client';
 const client = new Prisma.PrismaClient();
 import { addUsers, calculatePoints, getGithubData } from '../controllers/githubData.controller.js';
+import { deleteAllDuplicatePoints } from '../controllers/githubData.controller.js';
 import { waitUntil } from '@vercel/functions';
 
 async function addGithubDataToDatabase(temp) {
@@ -95,13 +96,17 @@ async function asyncFunction() {
     }
 }
 
-
-mainProjectRouter.get('/', async function(req, res, next) {
+mainProjectRouter.get('/', async function(req, res) {
     res.send("Main Project Router is working");
 
     waitUntil(
         asyncFunction()
     );
 });
+
+mainProjectRouter.get('/deleteDuplicates', async function(req, res) {
+    deleteAllDuplicatePoints();
+    res.send("Finished");
+})
 
 export default mainProjectRouter;

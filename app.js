@@ -8,6 +8,7 @@ import sideQuestRouter from './routes/sideQuest.js';
 import mainProjectRouter from './routes/mainProject.js';
 import authRouter from './routes/auth.js';
 import testEnvRouter from './routes/test-env.js';
+import discordBot from './routes/discordBot.js';
 import userRouter from './routes/users.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,8 +37,9 @@ app.use('/auth', authRouter);
 app.use('/users', userRouter);
 
 app.use('/sideQuest', sideQuestRouter);
-app.use('/mainProject', mainProjectRouter)
-app.use('/testing', testEnvRouter)
+app.use('/mainProject', mainProjectRouter);
+app.use('/discord', discordBot);
+app.use('/testing', testEnvRouter);
 
 
 // catch 404 and forward to error handler

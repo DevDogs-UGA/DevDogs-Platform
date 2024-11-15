@@ -136,11 +136,6 @@ async function confirmClosedBy(data, time) {
         return false;
     }
 }
-
-export async function deleteExtraPoints() {
-    
-}
-
 // only for DevDogs-website
 export async function addGithubDataToDatabase(temp) {
     await addUsers(temp.users);
@@ -324,5 +319,49 @@ export async function addUsers(temp_users) {
 
     if (data !== null) {
         return data;
+    }
+}
+
+async function deleteDuplicatePoints(issue_id) {
+    try {
+        // Find all points for the given issue_id
+        const points = await client.points.findMany({
+            where: { issue_id: issue_id }
+        });
+
+        // Create a map to track unique user_ids
+        const uniquePoints = new Map();
+
+        for (const point of points) {
+            const key = point.user_id; // Use user_id as the key
+            if (!uniquePoints.has(key)) {
+                uniquePoints.set(key, point.id); // Store the first occurrence
+            } else {
+                // If duplicate found, delete it
+                await client.points.delete({
+                    where: { id: point.id }
+                });
+                console.log(`Deleted duplicate point for user ${point.user_id} on issue ${issue_id}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error deleting duplicate points:', error);
+    }
+}
+
+// New function to delete duplicate points for all issues
+export async function deleteAllDuplicatePoints() {
+    try {
+        // Fetch all issues from the github_issues table
+        const issues = await client.github_issues.findMany({
+            select: { id: true } // Only select the id field
+        });
+
+        // Iterate over each issue and call deleteDuplicatePoints
+        for (const issue of issues) {
+            await deleteDuplicatePoints(issue.id);
+        }
+    } catch (error) {
+        console.error('Error deleting duplicate points for all issues:', error);
     }
 }
